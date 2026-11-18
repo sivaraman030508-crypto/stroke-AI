@@ -1,0 +1,15 @@
+{
+  "model_name": "resnet18",
+  "model_version": "stroke-type-triage-v1",
+  "task": "normal_ischemic_hemorrhagic_classification",
+  "classes": [
+    "normal",
+    "ischemic",
+    "hemorrhagic"
+  ],
+  "image_size": 224,
+  "input_channels": 1,
+  "validation_accuracy": 0.9586466165413534,
+  "dataset": "ozguraslank/brain-stroke-ct-dataset",
+  "disclaimer": "Research prototype; not clinically validated; not for autonomous diagnosis or treatment decisions."
+}

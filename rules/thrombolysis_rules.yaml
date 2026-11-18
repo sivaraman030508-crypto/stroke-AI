@@ -1,0 +1,83 @@
+# Thrombolysis Review Engine - Rule Definitions
+# All rules are defined declaratively in YAML, not hard-coded Python.
+# Rule order defines precedence: the first matching rule wins.
+# Safety note: ordering puts the most critical findings first.
+
+# ---------------------------------------------------------------------------
+# Configuration
+# ---------------------------------------------------------------------------
+thresholds:
+  hemorrhage_probability: 0.5   # above this = hemorrhagic
+  anticoagulant_positive: true  # ANY anticoagulant use
+  hypertension_systolic: 180    # severe uncontrolled HTN cutoff
+
+# ---------------------------------------------------------------------------
+# Rule Definitions
+# ---------------------------------------------------------------------------
+rules:
+  # Rule 1: Hemorrhage-positive output must produce HEMORRHAGE_SUSPECTED
+  - id: "RULE_HEMORRHAGE_DETECTED"
+    condition: "imaging_status == 'HEMORRHAGE_SUSPECTED'"
+    rationale: "CT shows hemorrhage; thrombolysis is contraindicated."
+    output_elapsed_hours: null
+    output_within_standard_window: null
+    output_imaging_status: "HEMORRHAGE_SUSPECTED"
+    output_final_status: "HEMORRHAGE_SUSPECTED"
+    output_requires_radiologist_review: false
+    output_missing_fields: null
+
+  # Rule 2: If image quality is poor, output URGENT_RADIOLOGY_REVIEW
+  - id: "RULE_POOR_IMAGE_QUALITY"
+    condition: "image_quality in ('poor', 'low_confidence')"
+    rationale: "Image quality is insufficient for reliable AI classification."
+    output_elapsed_hours: null
+    output_within_standard_window: null
+    output_imaging_status: "URGENT_RADIOLOGY_REVIEW"
+    output_final_status: "URGENT_RADIOLOGY_REVIEW"
+    output_requires_radiologist_review: true
+    output_missing_fields: null
+
+  # Rule 3: If LKW is missing, output INSUFFICIENT_INFORMATION
+  - id: "RULE_MISSING_LKW"
+    condition: "lkw_time is None or lkw_time == ''"
+    rationale: "Last known well time is missing; cannot assess thrombolysis window."
+    output_elapsed_hours: null
+    output_within_standard_window: null
+    output_imaging_status: "INSUFFICIENT_INFORMATION"
+    output_final_status: "INSUFFICIENT_INFORMATION"
+    output_requires_radiologist_review: false
+    output_missing_fields: ["lkw_time"]
+
+  # Rule 4: If elapsed time > 4.5 hours, output OUTSIDE_STANDARD_WINDOW
+  - id: "RULE_OUTSIDE_STANDARD_WINDOW"
+    condition: "elapsed_hours is not None and elapsed_hours > 4.5"
+    rationale: "Time from stroke onset exceeds 4.5-hour thrombolysis window."
+    output_elapsed_hours: "{{elapsed_hours}}"
+    output_within_standard_window: false
+    output_imaging_status: "OUTSIDE_STANDARD_WINDOW"
+    output_final_status: "OUTSIDE_STANDARD_WINDOW"
+    output_requires_radiologist_review: false
+    output_missing_fields: null
+
+  # Rule 5: If any major contraindication is true, output
+  # POTENTIALLY_ELIGIBLE_PENDING_REVIEW with a clinician-review warning
+  - id: "RULE_CONTRADICTION_PENDING_REVIEW"
+    condition: "severe_uncontrolled_hypertension == True or prior_intracranial_hemorrhage == True or active_bleeding == True or recent_major_surgery_or_trauma == True or anticoagulant_status == 'positive'"
+    rationale: "One or more major contraindications present. Decision requires clinician review; not automatic eligibility."
+    output_elapsed_hours: "{{elapsed_hours}}"
+    output_within_standard_window: "{{within_standard_window}}"
+    output_imaging_status: "{{imaging_status}}"
+    output_final_status: "POTENTIALLY_ELIGIBLE_PENDING_REVIEW"
+    output_requires_radiologist_review: true
+    output_missing_fields: null
+
+  # Rule 6: Default - preserve imaging status via the conservative status map
+  - id: "RULE_DEFAULT_STATUS_MAPPING"
+    condition: "True"
+    rationale: "No specific contraindication or exclusion detected. Imaging result preserved for clinician interpretation."
+    output_elapsed_hours: "{{elapsed_hours}}"
+    output_within_standard_window: "{{within_standard_window}}"
+    output_imaging_status: "{{imaging_status}}"
+    output_final_status: "{{final_status}}"
+    output_requires_radiologist_review: false
+    output_missing_fields: null

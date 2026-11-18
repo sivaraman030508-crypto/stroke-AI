@@ -1,0 +1,19 @@
+{
+  "model_name": "STROKE_AI_Model_B_Final",
+  "architecture": "ResNet18",
+  "dataset": "RSNA Intracranial Hemorrhage Subset",
+  "num_classes": 5,
+  "classes": [
+    "epidural",
+    "intraparenchymal",
+    "intraventricular",
+    "subarachnoid",
+    "subdural"
+  ],
+  "best_validation_mAP": 0.7811270263430603,
+  "final_training_loss": 0.3143,
+  "final_validation_loss": 0.171,
+  "experiment_details": "imbalance_weighted_finetuning",
+  "image_size": 224,
+  "input_channels": 3
+}
